@@ -1,4 +1,3 @@
-// Yahan aap apne pasandeeda gaane aaram se badal sakte hain
 const defaultTracks = [
   {
     title: "Kesariya",
