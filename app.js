@@ -1,4 +1,3 @@
-// Pure HTML5 Audio Engine (Zero Ghost Playback, Zero Proxy Failures)
 const audio = new Audio();
 let isPlaying = false;
 let currentPlaylist = [];
@@ -20,14 +19,39 @@ const sectionTitle = document.getElementById('section-title');
 const resultsCount = document.getElementById('results-count');
 const engineStatus = document.getElementById('engine-status');
 
-// Default initial tracks with working high-res covers
+// Free Audius App Name identifier
+const APP_NAME = "AURA_STREAM_APP";
+
 window.addEventListener('DOMContentLoaded', () => {
   engineStatus.innerText = "● LIVE ENGINE READY";
   engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
-  quickSearch("Arijit Singh");
+  // Initial trending tracks
+  fetchTrendingFullTracks();
 });
 
-// Render cards cleanly
+// Trending Full Length Songs
+async function fetchTrendingFullTracks() {
+  sectionTitle.innerText = "Trending Hits (Full Length)";
+  resultsCount.innerText = "Loading tracks...";
+  try {
+    const res = await fetch(`https://discoveryprovider.audius.co/v1/tracks/trending?app_name=${APP_NAME}`);
+    const json = await res.json();
+    if (json.data && json.data.length > 0) {
+      currentPlaylist = json.data.map(t => ({
+        id: t.id,
+        title: t.title,
+        artist: t.user.name,
+        image: t.artwork ? t.artwork['480x480'] || t.artwork['150x150'] : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=480',
+        audioUrl: `https://discoveryprovider.audius.co/v1/tracks/${t.id}/stream?app_name=${APP_NAME}`
+      }));
+      renderSongCards(currentPlaylist);
+      resultsCount.innerText = `${currentPlaylist.length} full tracks ready`;
+    }
+  } catch (err) {
+    console.warn("Trending fetch failed:", err);
+  }
+}
+
 function renderSongCards(songs) {
   songsGrid.innerHTML = '';
   if (!songs || songs.length === 0) {
@@ -56,7 +80,6 @@ function renderSongCards(songs) {
   });
 }
 
-// Play specific song
 function playSongAtIndex(index) {
   if (!currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
   currentIndex = index;
@@ -66,7 +89,6 @@ function playSongAtIndex(index) {
   playerArtist.innerText = song.artist;
   playerImg.src = song.image;
 
-  // Set stream URL
   audio.src = song.audioUrl;
   audio.load();
 
@@ -78,7 +100,6 @@ function playSongAtIndex(index) {
   });
 }
 
-// Real Toggle Play/Pause - Bilkul tameez se kaam karega
 function togglePlay() {
   if (!audio.src) {
     if (currentPlaylist.length > 0) playSongAtIndex(0);
@@ -128,6 +149,7 @@ audio.addEventListener('timeupdate', () => {
   }
 });
 
+// Gaana khatam hone par seedha agla gaana baje
 audio.addEventListener('ended', () => {
   playNext();
 });
@@ -144,7 +166,7 @@ function formatTime(secs) {
   return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
 
-// Search Logic: iTunes + Official Open Audio Stream
+// Full Search with No 30s Cutoff
 let searchDebounce = null;
 searchInput.addEventListener('input', (e) => {
   const q = e.target.value.trim();
@@ -153,25 +175,24 @@ searchInput.addEventListener('input', (e) => {
 
   searchDebounce = setTimeout(async () => {
     sectionTitle.innerText = `Search: "${q}"`;
-    resultsCount.innerText = "Searching...";
+    resultsCount.innerText = "Searching full tracks...";
     searchSpinner.classList.remove('hidden');
 
     try {
-      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=20`);
-      const data = await res.json();
+      const res = await fetch(`https://discoveryprovider.audius.co/v1/tracks/search?query=${encodeURIComponent(q)}&app_name=${APP_NAME}`);
+      const json = await res.json();
 
-      if (data && data.results && data.results.length > 0) {
-        currentPlaylist = data.results.map(item => ({
-          title: item.trackName,
-          artist: item.artistName,
-          // HD Cover Art (600x600)
-          image: item.artworkUrl100.replace('100x100bb', '600x600bb'),
-          // Real direct audio link (Apple Music official CDN stream)
-          audioUrl: item.previewUrl
-        })).filter(s => s.audioUrl);
+      if (json.data && json.data.length > 0) {
+        currentPlaylist = json.data.map(t => ({
+          id: t.id,
+          title: t.title,
+          artist: t.user.name,
+          image: t.artwork ? t.artwork['480x480'] || t.artwork['150x150'] : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=480',
+          audioUrl: `https://discoveryprovider.audius.co/v1/tracks/${t.id}/stream?app_name=${APP_NAME}`
+        }));
 
         renderSongCards(currentPlaylist);
-        resultsCount.innerText = `${currentPlaylist.length} songs ready`;
+        resultsCount.innerText = `${currentPlaylist.length} full songs found`;
       } else {
         renderSongCards([]);
       }
@@ -181,7 +202,7 @@ searchInput.addEventListener('input', (e) => {
     } finally {
       searchSpinner.classList.add('hidden');
     }
-  }, 350);
+  }, 400);
 });
 
 function quickSearch(name) {
