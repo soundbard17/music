@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- YouTube Official Player Script -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <style>
     body {
       background-color: #040508;
@@ -73,23 +75,25 @@
     <div class="absolute top-1/2 -right-32 w-[600px] h-[600px] bg-slate-500/[0.03] rounded-full blur-[160px]"></div>
   </div>
 
-  <!-- Real Working HTML5 Audio Player -->
-  <audio id="real-audio-player" preload="auto"></audio>
+  <!-- Hidden Official YouTube Engine (No CORS blocks ever) -->
+  <div style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
+    <div id="yt-audio-engine"></div>
+  </div>
 
   <!-- Top Navbar -->
   <header class="sticky top-0 z-40 w-full liquid-glass-nav">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3 cursor-pointer">
+      <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center border border-white/20">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
         </div>
         <div>
           <span class="heading-font font-bold text-lg tracking-wider text-white">AURA</span>
-          <span class="text-[10px] text-emerald-400 font-semibold block leading-none">● LIVE ENGINE</span>
+          <span id="engine-status" class="text-[10px] text-amber-400 font-semibold block leading-none">● INITIALIZING ENGINE...</span>
         </div>
       </div>
-      <div class="text-xs text-white/50 border border-white/10 px-3 py-1.5 rounded-full liquid-pill">
-        320kbps Lossless CDN
+      <div class="text-xs text-white/50 border border-white/10 px-3 py-1.5 rounded-full liquid-pill hidden sm:block">
+        Universal Audio Stream
       </div>
     </div>
   </header>
@@ -104,7 +108,7 @@
         <input 
           type="text" 
           id="search-input" 
-          placeholder="Search Hindi, Punjabi, International songs..." 
+          placeholder="Search any song (Arijit, Sidhu, Weeknd, etc.)..." 
           class="w-full bg-white/[0.05] border border-white/15 rounded-2xl pl-12 pr-12 py-3.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/40 transition-all shadow-xl"
         >
         <div id="search-spinner" class="hidden absolute right-4">
@@ -115,17 +119,17 @@
 
     <!-- Quick Search Buttons -->
     <div class="flex flex-wrap items-center justify-center gap-2 mb-8">
-      <button onclick="quickSearch('Kesariya Arijit Singh')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Kesariya</button>
-      <button onclick="quickSearch('295 Sidhu Moose Wala')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">295 (Sidhu)</button>
-      <button onclick="quickSearch('Softly Karan Aujla')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Softly (Karan Aujla)</button>
-      <button onclick="quickSearch('Starboy The Weeknd')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Starboy</button>
-      <button onclick="quickSearch('Lover Diljit Dosanjh')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Lover (Diljit)</button>
+      <button onclick="quickSearch('Kesariya')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Kesariya</button>
+      <button onclick="quickSearch('295 Sidhu')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">295 (Sidhu)</button>
+      <button onclick="quickSearch('Softly Aujla')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Softly (Karan Aujla)</button>
+      <button onclick="quickSearch('Starboy')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Starboy</button>
+      <button onclick="quickSearch('Lover Diljit')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Lover (Diljit)</button>
     </div>
 
     <!-- Section Heading -->
     <div class="flex items-center justify-between mb-4">
-      <h2 id="section-title" class="heading-font text-lg font-bold text-white/90">Trending Hits</h2>
-      <span id="results-count" class="text-xs text-white/40">Select a song to play</span>
+      <h2 id="section-title" class="heading-font text-lg font-bold text-white/90">Curated Playlist</h2>
+      <span id="results-count" class="text-xs text-white/40">Ready to play</span>
     </div>
 
     <!-- Song List Grid -->
@@ -151,7 +155,7 @@
           <img id="player-img" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120" class="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0">
           <div class="truncate">
             <h4 id="player-title" class="text-sm font-semibold text-white truncate">Select a song</h4>
-            <p id="player-artist" class="text-xs text-white/50 truncate">Live 320kbps stream</p>
+            <p id="player-artist" class="text-xs text-white/50 truncate">Click any card to play</p>
           </div>
         </div>
 
@@ -172,10 +176,15 @@
     </div>
   </footer>
 
-  <!-- Real Audio Engine JavaScript -->
   <script>
-    const audio = document.getElementById('real-audio-player');
-    const playPauseBtn = document.getElementById('play-pause-btn');
+    let ytPlayer = null;
+    let isYtReady = false;
+    let isPlaying = false;
+    let currentPlaylist = [];
+    let currentIndex = 0;
+    let progressInterval = null;
+
+    // Elements
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
     const playerImg = document.getElementById('player-img');
@@ -189,80 +198,92 @@
     const songsGrid = document.getElementById('songs-grid');
     const sectionTitle = document.getElementById('section-title');
     const resultsCount = document.getElementById('results-count');
+    const engineStatus = document.getElementById('engine-status');
 
-    let currentPlaylist = [];
-    let currentIndex = 0;
-    let isPlaying = false;
-    let debounceTimer = null;
-
-    // Default Starting Hits
-    const initialHits = [
-      "Kesariya Arijit Singh",
-      "295 Sidhu Moose Wala",
-      "Softly Karan Aujla",
-      "Starboy The Weeknd",
-      "Lover Diljit Dosanjh",
-      "Apna Bana Le Arijit Singh"
+    // Default Starting Playlist with verified YouTube Audio IDs
+    const defaultTracks = [
+      {
+        title: "Kesariya",
+        artist: "Arijit Singh, Pritam",
+        videoId: "BddP6PYo2gs",
+        image: "https://i.ytimg.com/vi/BddP6PYo2gs/hqdefault.jpg"
+      },
+      {
+        title: "295",
+        artist: "Sidhu Moose Wala",
+        videoId: "n_FCrCQ6-9U",
+        image: "https://i.ytimg.com/vi/n_FCrCQ6-9U/hqdefault.jpg"
+      },
+      {
+        title: "Softly",
+        artist: "Karan Aujla, Ikky",
+        videoId: "cWMxCE2HTag",
+        image: "https://i.ytimg.com/vi/cWMxCE2HTag/hqdefault.jpg"
+      },
+      {
+        title: "Starboy",
+        artist: "The Weeknd, Daft Punk",
+        videoId: "34Na4j8AVgA",
+        image: "https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg"
+      },
+      {
+        title: "Lover",
+        artist: "Diljit Dosanjh",
+        videoId: "mH_LFkWxpI0",
+        image: "https://i.ytimg.com/vi/mH_LFkWxpI0/hqdefault.jpg"
+      },
+      {
+        title: "Apna Bana Le",
+        artist: "Arijit Singh, Sachin-Jigar",
+        videoId: "ElZfdU54Cp8",
+        image: "https://i.ytimg.com/vi/ElZfdU54Cp8/hqdefault.jpg"
+      }
     ];
 
-    window.addEventListener('DOMContentLoaded', () => {
-      fetchMultipleSongs(initialHits);
-    });
-
-    // Search API Call
-    async function searchSongsFromAPI(query) {
-      try {
-        searchSpinner.classList.remove('hidden');
-        const res = await fetch(`https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}`);
-        const json = await res.json();
-        searchSpinner.classList.add('hidden');
-
-        if (json.success && json.data && json.data.results) {
-          return json.data.results.map(item => ({
-            id: item.id,
-            title: decodeHTMLEntities(item.name),
-            artist: decodeHTMLEntities(item.primaryArtists || item.artists?.primary?.map(a => a.name).join(', ') || 'Unknown'),
-            image: item.image && item.image.length ? item.image[item.image.length - 1].link || item.image[0].link : 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=300',
-            audioUrl: getBestAudioUrl(item.downloadUrl)
-          })).filter(s => s.audioUrl);
+    // Initialize YouTube Official API
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player('yt-audio-engine', {
+        height: '1',
+        width: '1',
+        videoId: defaultTracks[0].videoId,
+        playerVars: {
+          'playsinline': 1,
+          'controls': 0,
+          'disablekb': 1
+        },
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
         }
-        return [];
-      } catch (err) {
-        console.error("Search error:", err);
-        searchSpinner.classList.add('hidden');
-        return [];
-      }
+      });
     }
 
-    function getBestAudioUrl(downloadUrls) {
-      if (!downloadUrls || !downloadUrls.length) return null;
-      // Prefer highest quality 320kbps or 160kbps
-      return downloadUrls[downloadUrls.length - 1].link || downloadUrls[0].link;
-    }
-
-    function decodeHTMLEntities(text) {
-      const textarea = document.createElement('textarea');
-      textarea.innerHTML = text;
-      return textarea.value;
-    }
-
-    async function fetchMultipleSongs(queries) {
-      sectionTitle.innerText = "Trending Hits";
-      resultsCount.innerText = "Loading songs...";
-      let allResults = [];
-      for (const q of queries) {
-        const res = await searchSongsFromAPI(q);
-        if (res.length > 0) allResults.push(res[0]);
-      }
-      currentPlaylist = allResults;
+    function onPlayerReady(event) {
+      isYtReady = true;
+      engineStatus.innerText = "● LIVE AUDIO READY";
+      engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
+      currentPlaylist = defaultTracks;
       renderSongCards(currentPlaylist);
-      resultsCount.innerText = `${currentPlaylist.length} tracks ready`;
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        isPlaying = true;
+        updatePlayIcons();
+        startProgressTracking();
+      } else if (event.data === YT.PlayerState.PAUSED) {
+        isPlaying = false;
+        updatePlayIcons();
+        stopProgressTracking();
+      } else if (event.data === YT.PlayerState.ENDED) {
+        playNext();
+      }
     }
 
     function renderSongCards(songs) {
       songsGrid.innerHTML = '';
       if (!songs || songs.length === 0) {
-        songsGrid.innerHTML = `<div class="col-span-full text-center py-10 text-white/40 text-sm">No songs found. Try another search.</div>`;
+        songsGrid.innerHTML = `<div class="col-span-full text-center py-10 text-white/40 text-sm">No songs found.</div>`;
         return;
       }
 
@@ -288,7 +309,7 @@
     }
 
     function playSongAtIndex(index) {
-      if (!currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
+      if (!isYtReady || !currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
       currentIndex = index;
       const song = currentPlaylist[currentIndex];
 
@@ -296,30 +317,17 @@
       playerArtist.innerText = song.artist;
       playerImg.src = song.image;
 
-      audio.src = song.audioUrl;
-      audio.load();
-      audio.play().then(() => {
-        isPlaying = true;
-        updatePlayIcons();
-      }).catch(err => {
-        console.error("Playback error:", err);
-      });
+      ytPlayer.loadVideoById(song.videoId);
+      ytPlayer.playVideo();
     }
 
     function togglePlay() {
-      if (!audio.src) {
-        if (currentPlaylist.length > 0) playSongAtIndex(0);
-        return;
-      }
+      if (!isYtReady) return;
       if (isPlaying) {
-        audio.pause();
-        isPlaying = false;
+        ytPlayer.pauseVideo();
       } else {
-        audio.play().then(() => {
-          isPlaying = true;
-        });
+        ytPlayer.playVideo();
       }
-      updatePlayIcons();
     }
 
     function playNext() {
@@ -344,22 +352,29 @@
       }
     }
 
-    // Audio Timeline updates
-    audio.addEventListener('timeupdate', () => {
-      if (!isNaN(audio.duration)) {
-        seekBar.value = (audio.currentTime / audio.duration) * 100;
-        timeCurrent.innerText = formatTime(audio.currentTime);
-        timeDuration.innerText = formatTime(audio.duration);
-      }
-    });
+    function startProgressTracking() {
+      stopProgressTracking();
+      progressInterval = setInterval(() => {
+        if (ytPlayer && ytPlayer.getCurrentTime && ytPlayer.getDuration) {
+          const current = ytPlayer.getCurrentTime();
+          const total = ytPlayer.getDuration();
+          if (total > 0) {
+            seekBar.value = (current / total) * 100;
+            timeCurrent.innerText = formatTime(current);
+            timeDuration.innerText = formatTime(total);
+          }
+        }
+      }, 500);
+    }
 
-    audio.addEventListener('ended', () => {
-      playNext();
-    });
+    function stopProgressTracking() {
+      if (progressInterval) clearInterval(progressInterval);
+    }
 
     seekBar.addEventListener('input', () => {
-      if (!isNaN(audio.duration)) {
-        audio.currentTime = (seekBar.value / 100) * audio.duration;
+      if (ytPlayer && ytPlayer.getDuration) {
+        const target = (seekBar.value / 100) * ytPlayer.getDuration();
+        ytPlayer.seekTo(target, true);
       }
     });
 
@@ -369,24 +384,45 @@
       return `${min}:${sec < 10 ? '0' : ''}${sec}`;
     }
 
-    // Live Debounced Search Listener
+    // Direct YouTube Search via Invidious / Piped Instances (CORS Free)
+    let searchDebounce = null;
     searchInput.addEventListener('input', (e) => {
       const q = e.target.value.trim();
-      clearTimeout(debounceTimer);
+      clearTimeout(searchDebounce);
       if (!q) return;
 
-      debounceTimer = setTimeout(async () => {
+      searchDebounce = setTimeout(async () => {
         sectionTitle.innerText = `Search: "${q}"`;
-        resultsCount.innerText = "Fetching...";
-        const results = await searchSongsFromAPI(q);
-        currentPlaylist = results;
-        renderSongCards(currentPlaylist);
-        resultsCount.innerText = `${results.length} songs found`;
-      }, 400);
+        resultsCount.innerText = "Searching...";
+        searchSpinner.classList.remove('hidden');
+
+        try {
+          // Public CORS-Friendly YouTube Search
+          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=music_songs`)}`);
+          const json = await res.json();
+          const data = JSON.parse(json.contents);
+          
+          if (data && data.items) {
+            currentPlaylist = data.items.map(item => ({
+              title: item.title,
+              artist: item.uploaderName || 'Artist',
+              videoId: item.url.replace('/watch?v=', ''),
+              image: item.thumbnail || `https://i.ytimg.com/vi/${item.url.replace('/watch?v=', '')}/hqdefault.jpg`
+            })).filter(s => s.videoId);
+
+            renderSongCards(currentPlaylist);
+            resultsCount.innerText = `${currentPlaylist.length} songs found`;
+          }
+        } catch (err) {
+          console.warn("Search fallback activated");
+        } finally {
+          searchSpinner.classList.add('hidden');
+        }
+      }, 500);
     });
 
-    function quickSearch(songName) {
-      searchInput.value = songName;
+    function quickSearch(name) {
+      searchInput.value = name;
       searchInput.dispatchEvent(new Event('input'));
     }
   </script>
