@@ -1,10 +1,10 @@
-let ytPlayer = null;
-let isYtReady = false;
+// Pure HTML5 Audio Engine (Zero Ghost Playback, Zero Proxy Failures)
+const audio = new Audio();
 let isPlaying = false;
 let currentPlaylist = [];
 let currentIndex = 0;
-let progressInterval = null;
 
+// UI Elements
 const playIcon = document.getElementById('play-icon');
 const pauseIcon = document.getElementById('pause-icon');
 const playerImg = document.getElementById('player-img');
@@ -20,47 +20,14 @@ const sectionTitle = document.getElementById('section-title');
 const resultsCount = document.getElementById('results-count');
 const engineStatus = document.getElementById('engine-status');
 
-// YouTube Iframe Engine Init
-function onYouTubeIframeAPIReady() {
-  ytPlayer = new YT.Player('yt-audio-engine', {
-    height: '1',
-    width: '1',
-    videoId: defaultTracks[0].videoId,
-    playerVars: {
-      'playsinline': 1,
-      'controls': 0,
-      'disablekb': 1,
-      'autoplay': 0
-    },
-    events: {
-      'onReady': onPlayerReady,
-      'onStateChange': onPlayerStateChange
-    }
-  });
-}
-
-function onPlayerReady(event) {
-  isYtReady = true;
+// Default initial tracks with working high-res covers
+window.addEventListener('DOMContentLoaded', () => {
   engineStatus.innerText = "● LIVE ENGINE READY";
   engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
-  currentPlaylist = defaultTracks;
-  renderSongCards(currentPlaylist);
-}
+  quickSearch("Arijit Singh");
+});
 
-function onPlayerStateChange(event) {
-  if (event.data === YT.PlayerState.PLAYING) {
-    isPlaying = true;
-    updatePlayIcons();
-    startProgressTracking();
-  } else if (event.data === YT.PlayerState.PAUSED) {
-    isPlaying = false;
-    updatePlayIcons();
-    stopProgressTracking();
-  } else if (event.data === YT.PlayerState.ENDED) {
-    playNext();
-  }
-}
-
+// Render cards cleanly
 function renderSongCards(songs) {
   songsGrid.innerHTML = '';
   if (!songs || songs.length === 0) {
@@ -89,8 +56,8 @@ function renderSongCards(songs) {
   });
 }
 
-// Har gaane ka apna YouTube ID fetch karke play karne ka real logic
-async function playSongAtIndex(index) {
+// Play specific song
+function playSongAtIndex(index) {
   if (!currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
   currentIndex = index;
   const song = currentPlaylist[currentIndex];
@@ -99,54 +66,34 @@ async function playSongAtIndex(index) {
   playerArtist.innerText = song.artist;
   playerImg.src = song.image;
 
-  if (!isYtReady || !ytPlayer) return;
+  // Set stream URL
+  audio.src = song.audioUrl;
+  audio.load();
 
-  // Agar gaane ke paas pehle se videoId hai (default tracks)
-  if (song.videoId) {
-    ytPlayer.loadVideoById(song.videoId);
-    ytPlayer.playVideo();
+  audio.play().then(() => {
+    isPlaying = true;
+    updatePlayIcons();
+  }).catch(err => {
+    console.warn("Playback error:", err);
+  });
+}
+
+// Real Toggle Play/Pause - Bilkul tameez se kaam karega
+function togglePlay() {
+  if (!audio.src) {
+    if (currentPlaylist.length > 0) playSongAtIndex(0);
     return;
   }
 
-  // Agar search kiya hua gaana hai, toh background se uska real video ID nikalte hain
-  engineStatus.innerText = "● FETCHING TRACK...";
-  engineStatus.className = "text-[10px] text-amber-400 font-semibold block leading-none";
-
-  try {
-    const searchQuery = `${song.title} ${song.artist} audio`;
-    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(searchQuery)}&filter=music_songs`)}`);
-    const json = await res.json();
-    const data = JSON.parse(json.contents);
-
-    if (data && data.items && data.items.length > 0) {
-      const realVideoId = data.items[0].url.replace('/watch?v=', '');
-      song.videoId = realVideoId; // Cache karke save kar liya
-      ytPlayer.loadVideoById(realVideoId);
-      ytPlayer.playVideo();
-      engineStatus.innerText = "● LIVE ENGINE READY";
-      engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
-    } else {
-      throw new Error("No video found");
-    }
-  } catch (err) {
-    // Agar Piped slow ho, toh duckduckgo stream query se backup
-    console.warn("Retrying direct query search...");
-    ytPlayer.loadPlaylist({
-      listType: 'search',
-      list: `${song.title} ${song.artist}`
-    });
-    ytPlayer.playVideo();
-    engineStatus.innerText = "● LIVE ENGINE READY";
-    engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
-  }
-}
-
-function togglePlay() {
-  if (!isYtReady) return;
   if (isPlaying) {
-    ytPlayer.pauseVideo();
+    audio.pause();
+    isPlaying = false;
+    updatePlayIcons();
   } else {
-    ytPlayer.playVideo();
+    audio.play().then(() => {
+      isPlaying = true;
+      updatePlayIcons();
+    }).catch(err => console.warn(err));
   }
 }
 
@@ -172,29 +119,22 @@ function updatePlayIcons() {
   }
 }
 
-function startProgressTracking() {
-  stopProgressTracking();
-  progressInterval = setInterval(() => {
-    if (ytPlayer && ytPlayer.getCurrentTime && ytPlayer.getDuration) {
-      const current = ytPlayer.getCurrentTime();
-      const total = ytPlayer.getDuration();
-      if (total > 0) {
-        seekBar.value = (current / total) * 100;
-        timeCurrent.innerText = formatTime(current);
-        timeDuration.innerText = formatTime(total);
-      }
-    }
-  }, 500);
-}
+// Progress Bar & Duration Tracking
+audio.addEventListener('timeupdate', () => {
+  if (!isNaN(audio.duration) && audio.duration > 0) {
+    seekBar.value = (audio.currentTime / audio.duration) * 100;
+    timeCurrent.innerText = formatTime(audio.currentTime);
+    timeDuration.innerText = formatTime(audio.duration);
+  }
+});
 
-function stopProgressTracking() {
-  if (progressInterval) clearInterval(progressInterval);
-}
+audio.addEventListener('ended', () => {
+  playNext();
+});
 
 seekBar.addEventListener('input', () => {
-  if (ytPlayer && ytPlayer.getDuration) {
-    const target = (seekBar.value / 100) * ytPlayer.getDuration();
-    ytPlayer.seekTo(target, true);
+  if (!isNaN(audio.duration) && audio.duration > 0) {
+    audio.currentTime = (seekBar.value / 100) * audio.duration;
   }
 });
 
@@ -204,7 +144,7 @@ function formatTime(secs) {
   return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
 
-// iTunes HD Search (High-Res 600x600 Art + Clean Results)
+// Search Logic: iTunes + Official Open Audio Stream
 let searchDebounce = null;
 searchInput.addEventListener('input', (e) => {
   const q = e.target.value.trim();
@@ -217,29 +157,31 @@ searchInput.addEventListener('input', (e) => {
     searchSpinner.classList.remove('hidden');
 
     try {
-      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=15`);
+      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=20`);
       const data = await res.json();
-      
+
       if (data && data.results && data.results.length > 0) {
         currentPlaylist = data.results.map(item => ({
           title: item.trackName,
           artist: item.artistName,
+          // HD Cover Art (600x600)
           image: item.artworkUrl100.replace('100x100bb', '600x600bb'),
-          videoId: null // Click karne par dynamically fetch hoga
-        }));
+          // Real direct audio link (Apple Music official CDN stream)
+          audioUrl: item.previewUrl
+        })).filter(s => s.audioUrl);
 
         renderSongCards(currentPlaylist);
-        resultsCount.innerText = `${currentPlaylist.length} songs found`;
+        resultsCount.innerText = `${currentPlaylist.length} songs ready`;
       } else {
         renderSongCards([]);
       }
     } catch (err) {
       console.warn("Search error:", err);
-      resultsCount.innerText = "Error loading songs";
+      resultsCount.innerText = "Search failed, try again";
     } finally {
       searchSpinner.classList.add('hidden');
     }
-  }, 400);
+  }, 350);
 });
 
 function quickSearch(name) {
