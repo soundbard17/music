@@ -4,83 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AURA | Liquid Glass Music</title>
+  
+  <!-- Fonts & Tailwind -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <!-- YouTube Official Player Script -->
+  
+  <!-- Custom Style File (style.css) -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- YouTube Engine Script -->
   <script src="https://www.youtube.com/iframe_api"></script>
-  <style>
-    body {
-      background-color: #040508;
-      color: #f8fafc;
-      font-family: 'Inter', sans-serif;
-      overflow-x: hidden;
-      user-select: none;
-    }
-    .heading-font { font-family: 'Plus Jakarta Sans', sans-serif; }
-    .liquid-glass {
-      background: rgba(255, 255, 255, 0.035);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
-    }
-    .liquid-glass-nav {
-      background: rgba(4, 5, 8, 0.85);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .liquid-glass-bottom {
-      background: rgba(8, 10, 16, 0.92);
-      backdrop-filter: blur(36px);
-      -webkit-backdrop-filter: blur(36px);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.12);
-    }
-    .liquid-pill {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.2s ease;
-    }
-    .liquid-pill:hover {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-    input[type=range] {
-      -webkit-appearance: none;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 9999px;
-      outline: none;
-      cursor: pointer;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: #ffffff;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-      cursor: pointer;
-    }
-  </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-  <!-- Ambient Light Glow -->
+  <!-- Ambient Light -->
   <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
     <div class="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-white/[0.04] rounded-full blur-[140px]"></div>
     <div class="absolute top-1/2 -right-32 w-[600px] h-[600px] bg-slate-500/[0.03] rounded-full blur-[160px]"></div>
   </div>
 
-  <!-- Hidden Official YouTube Engine (No CORS blocks ever) -->
+  <!-- Hidden Engine Container -->
   <div style="position: absolute; top: -9999px; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
     <div id="yt-audio-engine"></div>
   </div>
 
-  <!-- Top Navbar -->
+  <!-- Top Bar -->
   <header class="sticky top-0 z-40 w-full liquid-glass-nav">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
@@ -98,9 +48,8 @@
     </div>
   </header>
 
-  <!-- Main Content Area -->
+  <!-- Main Content -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 pb-36">
-    
     <!-- Search Bar -->
     <div class="relative max-w-2xl mx-auto mb-6">
       <div class="relative flex items-center">
@@ -117,7 +66,7 @@
       </div>
     </div>
 
-    <!-- Quick Search Buttons -->
+    <!-- Quick Buttons -->
     <div class="flex flex-wrap items-center justify-center gap-2 mb-8">
       <button onclick="quickSearch('Kesariya')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">Kesariya</button>
       <button onclick="quickSearch('295 Sidhu')" class="liquid-pill px-3 py-1.5 rounded-full text-xs text-white/80">295 (Sidhu)</button>
@@ -132,25 +81,20 @@
       <span id="results-count" class="text-xs text-white/40">Ready to play</span>
     </div>
 
-    <!-- Song List Grid -->
-    <div id="songs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      <!-- Songs will appear here dynamically -->
-    </div>
+    <!-- Songs Grid -->
+    <div id="songs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
   </main>
 
-  <!-- Bottom Floating Music Player Bar -->
+  <!-- Bottom Player Bar -->
   <footer class="fixed bottom-0 left-0 right-0 z-50 liquid-glass-bottom px-4 py-3">
     <div class="max-w-7xl mx-auto flex flex-col gap-1.5">
-      <!-- Progress Bar -->
       <div class="flex items-center gap-2 w-full text-[11px] text-white/50">
         <span id="time-current">0:00</span>
         <input type="range" id="seek-bar" value="0" max="100" class="flex-1 h-1">
         <span id="time-duration">0:00</span>
       </div>
 
-      <!-- Controls & Song Info -->
       <div class="flex items-center justify-between gap-3">
-        <!-- Current Song Details -->
         <div class="flex items-center gap-3 overflow-hidden max-w-[55%]">
           <img id="player-img" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=120" class="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0">
           <div class="truncate">
@@ -159,7 +103,6 @@
           </div>
         </div>
 
-        <!-- Play/Pause Buttons -->
         <div class="flex items-center gap-3 shrink-0">
           <button onclick="playPrev()" class="p-2 text-white/70 hover:text-white transition-all">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"></path></svg>
@@ -176,255 +119,8 @@
     </div>
   </footer>
 
-  <script>
-    let ytPlayer = null;
-    let isYtReady = false;
-    let isPlaying = false;
-    let currentPlaylist = [];
-    let currentIndex = 0;
-    let progressInterval = null;
-
-    // Elements
-    const playIcon = document.getElementById('play-icon');
-    const pauseIcon = document.getElementById('pause-icon');
-    const playerImg = document.getElementById('player-img');
-    const playerTitle = document.getElementById('player-title');
-    const playerArtist = document.getElementById('player-artist');
-    const seekBar = document.getElementById('seek-bar');
-    const timeCurrent = document.getElementById('time-current');
-    const timeDuration = document.getElementById('time-duration');
-    const searchInput = document.getElementById('search-input');
-    const searchSpinner = document.getElementById('search-spinner');
-    const songsGrid = document.getElementById('songs-grid');
-    const sectionTitle = document.getElementById('section-title');
-    const resultsCount = document.getElementById('results-count');
-    const engineStatus = document.getElementById('engine-status');
-
-    // Default Starting Playlist with verified YouTube Audio IDs
-    const defaultTracks = [
-      {
-        title: "Kesariya",
-        artist: "Arijit Singh, Pritam",
-        videoId: "BddP6PYo2gs",
-        image: "https://i.ytimg.com/vi/BddP6PYo2gs/hqdefault.jpg"
-      },
-      {
-        title: "295",
-        artist: "Sidhu Moose Wala",
-        videoId: "n_FCrCQ6-9U",
-        image: "https://i.ytimg.com/vi/n_FCrCQ6-9U/hqdefault.jpg"
-      },
-      {
-        title: "Softly",
-        artist: "Karan Aujla, Ikky",
-        videoId: "cWMxCE2HTag",
-        image: "https://i.ytimg.com/vi/cWMxCE2HTag/hqdefault.jpg"
-      },
-      {
-        title: "Starboy",
-        artist: "The Weeknd, Daft Punk",
-        videoId: "34Na4j8AVgA",
-        image: "https://i.ytimg.com/vi/34Na4j8AVgA/hqdefault.jpg"
-      },
-      {
-        title: "Lover",
-        artist: "Diljit Dosanjh",
-        videoId: "mH_LFkWxpI0",
-        image: "https://i.ytimg.com/vi/mH_LFkWxpI0/hqdefault.jpg"
-      },
-      {
-        title: "Apna Bana Le",
-        artist: "Arijit Singh, Sachin-Jigar",
-        videoId: "ElZfdU54Cp8",
-        image: "https://i.ytimg.com/vi/ElZfdU54Cp8/hqdefault.jpg"
-      }
-    ];
-
-    // Initialize YouTube Official API
-    function onYouTubeIframeAPIReady() {
-      ytPlayer = new YT.Player('yt-audio-engine', {
-        height: '1',
-        width: '1',
-        videoId: defaultTracks[0].videoId,
-        playerVars: {
-          'playsinline': 1,
-          'controls': 0,
-          'disablekb': 1
-        },
-        events: {
-          'onReady': onPlayerReady,
-          'onStateChange': onPlayerStateChange
-        }
-      });
-    }
-
-    function onPlayerReady(event) {
-      isYtReady = true;
-      engineStatus.innerText = "● LIVE AUDIO READY";
-      engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
-      currentPlaylist = defaultTracks;
-      renderSongCards(currentPlaylist);
-    }
-
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.PLAYING) {
-        isPlaying = true;
-        updatePlayIcons();
-        startProgressTracking();
-      } else if (event.data === YT.PlayerState.PAUSED) {
-        isPlaying = false;
-        updatePlayIcons();
-        stopProgressTracking();
-      } else if (event.data === YT.PlayerState.ENDED) {
-        playNext();
-      }
-    }
-
-    function renderSongCards(songs) {
-      songsGrid.innerHTML = '';
-      if (!songs || songs.length === 0) {
-        songsGrid.innerHTML = `<div class="col-span-full text-center py-10 text-white/40 text-sm">No songs found.</div>`;
-        return;
-      }
-
-      songs.forEach((song, idx) => {
-        const card = document.createElement('div');
-        card.className = "liquid-glass p-3 rounded-2xl flex items-center justify-between gap-3 cursor-pointer hover:bg-white/[0.08] transition-all group";
-        card.onclick = () => playSongAtIndex(idx);
-
-        card.innerHTML = `
-          <div class="flex items-center gap-3 overflow-hidden">
-            <img src="${song.image}" class="w-12 h-12 rounded-xl object-cover border border-white/10 shrink-0">
-            <div class="truncate">
-              <h4 class="text-sm font-semibold text-white/90 group-hover:text-white truncate">${song.title}</h4>
-              <p class="text-xs text-white/50 truncate">${song.artist}</p>
-            </div>
-          </div>
-          <button class="w-9 h-9 rounded-full bg-white/10 group-hover:bg-white group-hover:text-black flex items-center justify-center shrink-0 transition-all">
-            <svg class="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-          </button>
-        `;
-        songsGrid.appendChild(card);
-      });
-    }
-
-    function playSongAtIndex(index) {
-      if (!isYtReady || !currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
-      currentIndex = index;
-      const song = currentPlaylist[currentIndex];
-
-      playerTitle.innerText = song.title;
-      playerArtist.innerText = song.artist;
-      playerImg.src = song.image;
-
-      ytPlayer.loadVideoById(song.videoId);
-      ytPlayer.playVideo();
-    }
-
-    function togglePlay() {
-      if (!isYtReady) return;
-      if (isPlaying) {
-        ytPlayer.pauseVideo();
-      } else {
-        ytPlayer.playVideo();
-      }
-    }
-
-    function playNext() {
-      if (currentPlaylist.length === 0) return;
-      currentIndex = (currentIndex + 1) % currentPlaylist.length;
-      playSongAtIndex(currentIndex);
-    }
-
-    function playPrev() {
-      if (currentPlaylist.length === 0) return;
-      currentIndex = (currentIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
-      playSongAtIndex(currentIndex);
-    }
-
-    function updatePlayIcons() {
-      if (isPlaying) {
-        playIcon.classList.add('hidden');
-        pauseIcon.classList.remove('hidden');
-      } else {
-        playIcon.classList.remove('hidden');
-        pauseIcon.classList.add('hidden');
-      }
-    }
-
-    function startProgressTracking() {
-      stopProgressTracking();
-      progressInterval = setInterval(() => {
-        if (ytPlayer && ytPlayer.getCurrentTime && ytPlayer.getDuration) {
-          const current = ytPlayer.getCurrentTime();
-          const total = ytPlayer.getDuration();
-          if (total > 0) {
-            seekBar.value = (current / total) * 100;
-            timeCurrent.innerText = formatTime(current);
-            timeDuration.innerText = formatTime(total);
-          }
-        }
-      }, 500);
-    }
-
-    function stopProgressTracking() {
-      if (progressInterval) clearInterval(progressInterval);
-    }
-
-    seekBar.addEventListener('input', () => {
-      if (ytPlayer && ytPlayer.getDuration) {
-        const target = (seekBar.value / 100) * ytPlayer.getDuration();
-        ytPlayer.seekTo(target, true);
-      }
-    });
-
-    function formatTime(secs) {
-      const min = Math.floor(secs / 60) || 0;
-      const sec = Math.floor(secs % 60) || 0;
-      return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-    }
-
-    // Direct YouTube Search via Invidious / Piped Instances (CORS Free)
-    let searchDebounce = null;
-    searchInput.addEventListener('input', (e) => {
-      const q = e.target.value.trim();
-      clearTimeout(searchDebounce);
-      if (!q) return;
-
-      searchDebounce = setTimeout(async () => {
-        sectionTitle.innerText = `Search: "${q}"`;
-        resultsCount.innerText = "Searching...";
-        searchSpinner.classList.remove('hidden');
-
-        try {
-          // Public CORS-Friendly YouTube Search
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(q)}&filter=music_songs`)}`);
-          const json = await res.json();
-          const data = JSON.parse(json.contents);
-          
-          if (data && data.items) {
-            currentPlaylist = data.items.map(item => ({
-              title: item.title,
-              artist: item.uploaderName || 'Artist',
-              videoId: item.url.replace('/watch?v=', ''),
-              image: item.thumbnail || `https://i.ytimg.com/vi/${item.url.replace('/watch?v=', '')}/hqdefault.jpg`
-            })).filter(s => s.videoId);
-
-            renderSongCards(currentPlaylist);
-            resultsCount.innerText = `${currentPlaylist.length} songs found`;
-          }
-        } catch (err) {
-          console.warn("Search fallback activated");
-        } finally {
-          searchSpinner.classList.add('hidden');
-        }
-      }, 500);
-    });
-
-    function quickSearch(name) {
-      searchInput.value = name;
-      searchInput.dispatchEvent(new Event('input'));
-    }
-  </script>
+  <!-- Scripts Linked at Bottom (Pehle songs.js, fir app.js) -->
+  <script src="songs.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
