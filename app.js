@@ -34,8 +34,7 @@ function onYouTubeIframeAPIReady() {
     },
     events: {
       'onReady': onPlayerReady,
-      'onStateChange': onPlayerStateChange,
-      'onError': onPlayerError
+      'onStateChange': onPlayerStateChange
     }
   });
 }
@@ -60,11 +59,6 @@ function onPlayerStateChange(event) {
   } else if (event.data === YT.PlayerState.ENDED) {
     playNext();
   }
-}
-
-function onPlayerError(e) {
-  console.warn("Playback fallback triggered");
-  playNext();
 }
 
 function renderSongCards(songs) {
@@ -95,7 +89,8 @@ function renderSongCards(songs) {
   });
 }
 
-function playSongAtIndex(index) {
+// Har gaane ka apna YouTube ID fetch karke play karne ka real logic
+async function playSongAtIndex(index) {
   if (!currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
   currentIndex = index;
   const song = currentPlaylist[currentIndex];
@@ -104,9 +99,45 @@ function playSongAtIndex(index) {
   playerArtist.innerText = song.artist;
   playerImg.src = song.image;
 
-  if (isYtReady && ytPlayer) {
+  if (!isYtReady || !ytPlayer) return;
+
+  // Agar gaane ke paas pehle se videoId hai (default tracks)
+  if (song.videoId) {
     ytPlayer.loadVideoById(song.videoId);
     ytPlayer.playVideo();
+    return;
+  }
+
+  // Agar search kiya hua gaana hai, toh background se uska real video ID nikalte hain
+  engineStatus.innerText = "● FETCHING TRACK...";
+  engineStatus.className = "text-[10px] text-amber-400 font-semibold block leading-none";
+
+  try {
+    const searchQuery = `${song.title} ${song.artist} audio`;
+    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(searchQuery)}&filter=music_songs`)}`);
+    const json = await res.json();
+    const data = JSON.parse(json.contents);
+
+    if (data && data.items && data.items.length > 0) {
+      const realVideoId = data.items[0].url.replace('/watch?v=', '');
+      song.videoId = realVideoId; // Cache karke save kar liya
+      ytPlayer.loadVideoById(realVideoId);
+      ytPlayer.playVideo();
+      engineStatus.innerText = "● LIVE ENGINE READY";
+      engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
+    } else {
+      throw new Error("No video found");
+    }
+  } catch (err) {
+    // Agar Piped slow ho, toh duckduckgo stream query se backup
+    console.warn("Retrying direct query search...");
+    ytPlayer.loadPlaylist({
+      listType: 'search',
+      list: `${song.title} ${song.artist}`
+    });
+    ytPlayer.playVideo();
+    engineStatus.innerText = "● LIVE ENGINE READY";
+    engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
   }
 }
 
@@ -173,7 +204,7 @@ function formatTime(secs) {
   return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
 
-// 100% Reliable HD Search via iTunes API + YouTube Fallback Mapping
+// iTunes HD Search (High-Res 600x600 Art + Clean Results)
 let searchDebounce = null;
 searchInput.addEventListener('input', (e) => {
   const q = e.target.value.trim();
@@ -186,7 +217,6 @@ searchInput.addEventListener('input', (e) => {
     searchSpinner.classList.remove('hidden');
 
     try {
-      // Official Apple iTunes Music API (Free, High Quality 600x600 Art, No CORS Block)
       const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=15`);
       const data = await res.json();
       
@@ -194,10 +224,8 @@ searchInput.addEventListener('input', (e) => {
         currentPlaylist = data.results.map(item => ({
           title: item.trackName,
           artist: item.artistName,
-          // HD 600x600 Cover Art (Clean & sharp)
           image: item.artworkUrl100.replace('100x100bb', '600x600bb'),
-          // Auto search video fallback
-          videoId: defaultTracks.find(t => t.title.toLowerCase().includes(item.trackName.toLowerCase()))?.videoId || defaultTracks[0].videoId
+          videoId: null // Click karne par dynamically fetch hoga
         }));
 
         renderSongCards(currentPlaylist);
