@@ -1,8 +1,8 @@
 let ytPlayer = null;
 let isYtReady = false;
 let isPlaying = false;
-let userPaused = false; // Isse gaana khud se play kabhi nahi hoga
-let currentPlaylist = [];
+let userPaused = false;
+let currentPlaylist = typeof defaultTracks !== 'undefined' ? defaultTracks : [];
 let currentIndex = 0;
 let progressInterval = null;
 
@@ -22,52 +22,20 @@ const sectionTitle = document.getElementById('section-title');
 const resultsCount = document.getElementById('results-count');
 const engineStatus = document.getElementById('engine-status');
 
-// Default popular tracks (100% verified full-length IDs)
-const defaultTracks = [
-  {
-    title: "Kesariya",
-    artist: "Arijit Singh, Pritam",
-    videoId: "BddP6PYo2gs",
-    image: "https://i.ytimg.com/vi/BddP6PYo2gs/maxresdefault.jpg"
-  },
-  {
-    title: "295",
-    artist: "Sidhu Moose Wala",
-    videoId: "n_FCrCQ6-9U",
-    image: "https://i.ytimg.com/vi/n_FCrCQ6-9U/maxresdefault.jpg"
-  },
-  {
-    title: "Softly",
-    artist: "Karan Aujla, Ikky",
-    videoId: "cWMxCE2HTag",
-    image: "https://i.ytimg.com/vi/cWMxCE2HTag/maxresdefault.jpg"
-  },
-  {
-    title: "Starboy",
-    artist: "The Weeknd, Daft Punk",
-    videoId: "34Na4j8AVgA",
-    image: "https://i.ytimg.com/vi/34Na4j8AVgA/maxresdefault.jpg"
-  },
-  {
-    title: "Lover",
-    artist: "Diljit Dosanjh",
-    videoId: "mH_LFkWxpI0",
-    image: "https://i.ytimg.com/vi/mH_LFkWxpI0/maxresdefault.jpg"
-  },
-  {
-    title: "Apna Bana Le",
-    artist: "Arijit Singh, Sachin-Jigar",
-    videoId: "ElZfdU54Cp8",
-    image: "https://i.ytimg.com/vi/ElZfdU54Cp8/maxresdefault.jpg"
+// Page load hote hi cards render karein
+window.addEventListener('DOMContentLoaded', () => {
+  if (currentPlaylist.length > 0) {
+    renderSongCards(currentPlaylist);
+    resultsCount.innerText = `${currentPlaylist.length} tracks ready`;
   }
-];
+});
 
-// YouTube Official Engine Initializer
-function onYouTubeIframeAPIReady() {
+// YouTube Official Iframe Callback
+window.onYouTubeIframeAPIReady = function() {
   ytPlayer = new YT.Player('yt-audio-engine', {
     height: '1',
     width: '1',
-    videoId: defaultTracks[0].videoId,
+    videoId: currentPlaylist[0]?.videoId || 'BddP6PYo2gs',
     playerVars: {
       'playsinline': 1,
       'controls': 0,
@@ -79,20 +47,20 @@ function onYouTubeIframeAPIReady() {
       'onStateChange': onPlayerStateChange
     }
   });
-}
+};
 
 function onPlayerReady() {
   isYtReady = true;
   engineStatus.innerText = "● LIVE AUDIO READY";
   engineStatus.className = "text-[10px] text-emerald-400 font-semibold block leading-none";
-  currentPlaylist = defaultTracks;
-  renderSongCards(currentPlaylist);
+  if (songsGrid.children.length === 0 && currentPlaylist.length > 0) {
+    renderSongCards(currentPlaylist);
+  }
 }
 
 function onPlayerStateChange(event) {
   if (event.data === YT.PlayerState.PLAYING) {
     if (userPaused) {
-      // Agar user ne pause dabaya hai toh zabardasti band rakho
       ytPlayer.pauseVideo();
       return;
     }
@@ -111,7 +79,7 @@ function onPlayerStateChange(event) {
 function renderSongCards(songs) {
   songsGrid.innerHTML = '';
   if (!songs || songs.length === 0) {
-    songsGrid.innerHTML = `<div class="col-span-full text-center py-10 text-white/40 text-sm">No songs found. Try another name.</div>`;
+    songsGrid.innerHTML = `<div class="col-span-full text-center py-10 text-white/40 text-sm">No songs found.</div>`;
     return;
   }
 
@@ -137,7 +105,7 @@ function renderSongCards(songs) {
 }
 
 function playSongAtIndex(index) {
-  if (!isYtReady || !currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
+  if (!currentPlaylist || index < 0 || index >= currentPlaylist.length) return;
   currentIndex = index;
   const song = currentPlaylist[currentIndex];
 
@@ -146,12 +114,15 @@ function playSongAtIndex(index) {
   playerImg.src = song.image;
 
   userPaused = false;
-  ytPlayer.loadVideoById(song.videoId);
-  ytPlayer.playVideo();
+
+  if (isYtReady && ytPlayer) {
+    ytPlayer.loadVideoById(song.videoId);
+    ytPlayer.playVideo();
+  }
 }
 
 function togglePlay() {
-  if (!isYtReady) return;
+  if (!isYtReady || !ytPlayer) return;
   if (isPlaying) {
     userPaused = true;
     ytPlayer.pauseVideo();
@@ -217,59 +188,28 @@ function formatTime(secs) {
   return `${min}:${sec < 10 ? '0' : ''}${sec}`;
 }
 
-// Full Universal Search Engine (Reliable Instance)
+// Search Handler
 let searchDebounce = null;
 searchInput.addEventListener('input', (e) => {
-  const q = e.target.value.trim();
+  const q = e.target.value.trim().toLowerCase();
   clearTimeout(searchDebounce);
-  if (!q) return;
+  if (!q) {
+    currentPlaylist = defaultTracks;
+    renderSongCards(currentPlaylist);
+    sectionTitle.innerText = "Curated Playlist";
+    resultsCount.innerText = `${currentPlaylist.length} tracks ready`;
+    return;
+  }
 
-  searchDebounce = setTimeout(async () => {
+  searchDebounce = setTimeout(() => {
     sectionTitle.innerText = `Search: "${q}"`;
-    resultsCount.innerText = "Searching songs...";
-    searchSpinner.classList.remove('hidden');
-
-    try {
-      // Invidious API with direct working instance
-      const res = await fetch(`https://inv.nadeko.net/api/v1/search?q=${encodeURIComponent(q)}&type=video`);
-      const data = await res.json();
-
-      if (data && Array.isArray(data) && data.length > 0) {
-        currentPlaylist = data.slice(0, 15).map(item => ({
-          title: item.title,
-          artist: item.author || "Official Audio",
-          videoId: item.videoId,
-          image: item.videoThumbnails?.find(t => t.quality === 'medium')?.url || `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`
-        }));
-
-        renderSongCards(currentPlaylist);
-        resultsCount.innerText = `${currentPlaylist.length} full songs ready`;
-      } else {
-        renderSongCards([]);
-      }
-    } catch (err) {
-      console.warn("Search fallback triggered:", err);
-      // Secondary fallback instance
-      try {
-        const fallbackRes = await fetch(`https://vid.puffyan.us/api/v1/search?q=${encodeURIComponent(q)}&type=video`);
-        const fallbackData = await fallbackRes.json();
-        if (fallbackData && fallbackData.length > 0) {
-          currentPlaylist = fallbackData.slice(0, 15).map(item => ({
-            title: item.title,
-            artist: item.author || "Artist",
-            videoId: item.videoId,
-            image: `https://i.ytimg.com/vi/${item.videoId}/hqdefault.jpg`
-          }));
-          renderSongCards(currentPlaylist);
-          resultsCount.innerText = `${currentPlaylist.length} full songs ready`;
-        }
-      } catch (e) {
-        resultsCount.innerText = "Search error, try again";
-      }
-    } finally {
-      searchSpinner.classList.add('hidden');
-    }
-  }, 450);
+    const filtered = defaultTracks.filter(s => 
+      s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+    );
+    currentPlaylist = filtered;
+    renderSongCards(currentPlaylist);
+    resultsCount.innerText = `${filtered.length} found in playlist`;
+  }, 300);
 });
 
 function quickSearch(name) {
